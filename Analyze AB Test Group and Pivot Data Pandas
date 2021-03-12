@@ -1,0 +1,60 @@
+import codecademylib
+import pandas as pd
+
+ad_clicks = pd.read_csv('ad_clicks.csv')
+
+
+
+
+ad_clicks_count_source= ad_clicks.groupby("utm_source").user_id.count().reset_index()
+
+
+
+ad_clicks["is_click"]= ~ad_clicks\
+   .ad_click_timestamp.isnull()
+
+
+
+clicks_by_source= ad_clicks.groupby(["utm_source","is_click"])["user_id"].count().reset_index()
+
+
+clicks_pivot= clicks_by_source.pivot(columns="is_click",index="utm_source",values="user_id").reset_index()
+
+    
+
+
+clicks_pivot['percent_clicked'] = \
+   clicks_pivot[True] / \
+   (clicks_pivot[True] + 
+    clicks_pivot[False])
+
+aprox_same= ad_clicks.groupby("experimental_group").user_id.count().reset_index()
+
+greater_per= ad_clicks.groupby(["experimental_group","is_click"])["user_id"].count().reset_index()
+
+greater_per_pivoted= greater_per.pivot(values="user_id",columns="is_click",index="experimental_group").reset_index()
+
+
+a_clicks = ad_clicks[
+   ad_clicks.experimental_group
+   == 'A']
+
+b_clicks = ad_clicks[
+   ad_clicks.experimental_group
+   == 'B']
+
+
+percent_ad_a_byday= a_clicks.groupby(["day","is_click"])["user_id"].count().reset_index().pivot(columns="is_click",index="day",values="user_id").reset_index()
+
+
+percent_ad_a_byday["percent_clicked_a"]= percent_ad_a_byday[True]/ (percent_ad_a_byday[False]+percent_ad_a_byday[True])
+
+print(percent_ad_a_byday)
+
+percent_ad_b_byday= b_clicks.groupby(["day","is_click"])["user_id"].count().reset_index().pivot(columns="is_click",index="day",values="user_id").reset_index()
+
+print("\n")
+
+percent_ad_b_byday["percent_clicked_b"]= percent_ad_b_byday[True]/ (percent_ad_b_byday[False]+percent_ad_b_byday[True])
+
+print(percent_ad_b_byday)
