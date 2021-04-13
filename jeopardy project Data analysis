@@ -1,0 +1,64 @@
+import pandas as pd
+import csv
+pd.set_option('display.max_colwidth', -1)
+
+#Reading CSV with python OPEN
+"""
+list_of_jeopardy=[]			
+with open('jeopardy.csv', newline='') as users_csv:
+  user_reader= csv.DictReader(users_csv)
+  for row in user_reader:
+    list_of_jeopardy.append(row[' Answer'])
+
+print(list_of_jeopardy)
+"""
+
+#Abriendo el Archivo csv en forma de un Dataframe Pandas
+jeopardy=pd.read_csv("jeopardy.csv")
+
+#Actualizando el nombre de las columnas
+for col in jeopardy.columns:
+  colnew = col.strip().lower().replace(' ', '_')
+  jeopardy.rename(columns={col: colnew}, inplace= True)
+
+#COLUMNAS ACTUALIZADAS
+""" 
+for col in jeopardy.columns:
+  print(col)
+"""
+
+# Filtrando data con palabras que estaban en un listado en este caso ["King", "England"] en la columna de Question  . Importante el lambda function
+
+
+def find_question(frame, wordlist):
+  search = lambda x: all(word.lower() in x.lower() for word in wordlist)
+
+  return frame.loc[frame['question'].apply(search)]
+
+#print(find_question(jeopardy, ['Chief', 'Justice']))
+
+
+#Create column float_value containing formatted and floated values, replacing Final Jeopardy values ('None') with 0.0
+jeopardy['float_value'] = jeopardy.value.apply(lambda value: float(value.replace('$', '').replace(',', '')) if value != 'None' else 0.0)
+#Test lambda function
+#print(jeopardy.float_value)
+
+#Determine mean difficulty of question containing a word
+difficulty = find_question(jeopardy, ['King'])
+#print(difficulty.float_value.mean())
+#Determine all unique answers to question containing search word and count
+#print(difficulty.answer.value_counts())
+
+#Calculating number of questions containing word "computer" for each decade
+#Add column to dataframe formatted to year 
+jeopardy['question_year'] = jeopardy.air_date.apply(lambda x: x[:4])
+#Use find_question function and GROUP BY question_year
+computer = find_question(jeopardy, ['Computer'])
+computer_by_year = computer.groupby('question_year').show_number.count().reset_index()
+#Select rows where question_year is in the 90s
+computer_90s = computer_by_year[(computer_by_year.question_year < '2000') & (computer_by_year.question_year > '1989')]
+print(computer_90s)
+#Select rows where question_year is in the 2000s
+computer_2000s = computer_by_year[(computer_by_year.question_year < '2010') & (computer_by_year.question_year > '1999')]
+#Calculate the total number of questions containing the search term by decade and print to terminal
+print("The number of questions featuring the word \"computer\" in the 1990s was " + str(computer_90s.show_number.sum()) + " whereas the number of questions containing the word \"computer\" in the 2000s was " + str(computer_2000s.show_number.sum()))
